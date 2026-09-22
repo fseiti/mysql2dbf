@@ -1,0 +1,4 @@
+dbf
+mysql-connector-python
+pandas
+pyinstaller

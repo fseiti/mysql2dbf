@@ -1,21 +1,50 @@
-import os
+import json
+import logging
 import re
+import sys
+from pathlib import Path
+
 import dbf
 import mysql.connector
 import pandas as pd
 
 
-# Configure these values for the database and table to export.
-DB_CONFIG = {
-	"host": os.getenv("MYSQL_HOST", "localhost"),
-	"port": int(os.getenv("MYSQL_PORT", "3306")),
-	"user": os.getenv("MYSQL_USER", "root"),
-	"password": os.getenv("MYSQL_PASSWORD", ""),
-	"database": os.getenv("MYSQL_DATABASE", "test"),
-}
-TABLE_SCHEMA = "test"
-TABLE_NAME = "pnsn"
-DBF_FILE = "output.dbf"
+BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
+CONFIG_FILE = BASE_DIR / "config.json"
+LOG_FILE = BASE_DIR / "Mysql2dbf.log"
+
+logging.basicConfig(
+	filename=LOG_FILE,
+	level=logging.INFO,
+	format="%(asctime)s [%(levelname)s] %(message)s",
+	encoding="utf-8",
+)
+LOGGER = logging.getLogger(__name__)
+
+
+def load_config():
+	LOGGER.info("Loading configuration from %s", CONFIG_FILE)
+	try:
+		with CONFIG_FILE.open(encoding="utf-8") as file:
+			config = json.load(file)
+	except FileNotFoundError as error:
+		raise FileNotFoundError(
+			f"Configuration file not found: {CONFIG_FILE}"
+		) from error
+
+	db_config = config["db"]
+	return {
+		"db": {
+			"host": db_config["host"],
+			"port": int(db_config["port"]),
+			"user": db_config["user"],
+			"password": db_config["password"],
+			"database": db_config["database"],
+		},
+		"table_schema": config["table_schema"],
+		"table_name": config["table_name"],
+		"dbf_file": str(BASE_DIR / config["dbf_file"]),
+	}
 
 
 def make_field_names(columns):
@@ -73,8 +102,36 @@ def dbf_type_from_mysql(column_type):
 	return "C(254)"
 
 
-def export_select_to_dbf():
-	connection = mysql.connector.connect(**DB_CONFIG)
+def export_select_to_dbf(config):
+	LOGGER.info(
+		"Starting export: %s.%s -> %s",
+		config["table_schema"],
+		config["table_name"],
+		config["dbf_file"],
+	)
+	connection_options = {
+		**config["db"],
+		"connection_timeout": 10,
+		"use_pure": True,
+	}
+	print(f"Conversão iniciada: {config['table_schema']}.{config['table_name']} -> {config['dbf_file']}")
+	try:
+		connection = mysql.connector.connect(**connection_options)
+	except Exception as error:
+		LOGGER.exception(
+			"MySQL connection failed for %s:%s/%s",
+			config["db"]["host"],
+			config["db"]["port"],
+			config["db"]["database"],
+		)
+		db = config["db"]
+		raise ConnectionError(
+			"Could not connect to MySQL at "
+			f"{db['host']}:{db['port']} "
+			f"using database '{db['database']}'. "
+			f"Check that MySQL is running and verify host, port, user, "
+			f"password, and database in {CONFIG_FILE}. MySQL error: {error}"
+		) from error
 
 	try:
 		cursor = connection.cursor()
@@ -86,11 +143,18 @@ def export_select_to_dbf():
 			  AND TABLE_NAME = %s
 			ORDER BY ORDINAL_POSITION
 			""",
-			(TABLE_SCHEMA, TABLE_NAME),
+			(config["table_schema"], config["table_name"]),
 		)
 		metadata = cursor.fetchall()
 		if not metadata:
-			raise ValueError(f"Table not found: {TABLE_SCHEMA}.{TABLE_NAME}")
+			LOGGER.error(
+				"Table not found: %s.%s",
+				config["table_schema"],
+				config["table_name"],
+			)
+			raise ValueError(
+				f"Table not found: {config['table_schema']}.{config['table_name']}"
+			)
 
 		columns = [column_name for column_name, _ in metadata]
 		field_types = [
@@ -99,9 +163,10 @@ def export_select_to_dbf():
 		]
 
 		cursor.execute(
-			f"SELECT * FROM `{TABLE_SCHEMA}`.`{TABLE_NAME}`"
+			f"SELECT * FROM `{config['table_schema']}`.`{config['table_name']}`"
 		)
 		rows = cursor.fetchall()
+		LOGGER.info("Read %s rows and %s columns", len(rows), len(columns))
 	finally:
 		cursor.close()
 		connection.close()
@@ -110,7 +175,7 @@ def export_select_to_dbf():
 	field_names = make_field_names(columns)
 
 	table = dbf.Table(
-		DBF_FILE,
+		config["dbf_file"],
 		"; ".join(
 			f"{field_name} {field_type}"
 			for field_name, field_type in zip(field_names, field_types)
@@ -134,10 +199,17 @@ def export_select_to_dbf():
 	finally:
 		table.close()
 
-	print(f"Created: {DBF_FILE}")
-	print(f"Rows: {len(dataframe):,}")
-	print(f"Columns: {len(columns)}")
+	print(f"Criado: {config['dbf_file']}")
+	print(f"Linhas: {len(dataframe):,}")
+	print(f"Colunas: {len(columns)}")
+	LOGGER.info("Export completed: %s rows and %s columns", len(dataframe), len(columns))
 
 
 if __name__ == "__main__":
-	export_select_to_dbf()
+	try:
+		export_select_to_dbf(load_config())
+	except Exception as error:
+		LOGGER.exception("Export failed")
+		print(f"ERROR: {error}")
+		print(f"Detalhes em: {LOG_FILE}")
+		sys.exit(1)

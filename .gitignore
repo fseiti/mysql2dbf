@@ -4,3 +4,13 @@ csv/pns
 csv/columns_202609211640.csv
 output.dbf
 pnsn.dbf
+*.log
+.venv
+dist/
+build/
+
+**/__pycache__/
+*.py[cod]
+test*.py
+build*
+*.spec
