@@ -41,7 +41,6 @@ def load_config():
 			"password": db_config["password"],
 			"database": db_config["database"],
 		},
-		"table_schema": config["table_schema"],
 		"table_name": config["table_name"],
 		"dbf_file": str(BASE_DIR / config["dbf_file"]),
 	}
@@ -105,7 +104,7 @@ def dbf_type_from_mysql(column_type):
 def export_select_to_dbf(config):
 	LOGGER.info(
 		"Starting export: %s.%s -> %s",
-		config["table_schema"],
+		config["db"]["database"],
 		config["table_name"],
 		config["dbf_file"],
 	)
@@ -114,7 +113,7 @@ def export_select_to_dbf(config):
 		"connection_timeout": 10,
 		"use_pure": True,
 	}
-	print(f"Conversão iniciada: {config['table_schema']}.{config['table_name']} -> {config['dbf_file']}")
+	print(f"Conversão iniciada: {config['db']['database']}.{config['table_name']} -> {config['dbf_file']}")
 	try:
 		connection = mysql.connector.connect(**connection_options)
 	except Exception as error:
@@ -139,21 +138,20 @@ def export_select_to_dbf(config):
 			"""
 			SELECT COLUMN_NAME, COLUMN_TYPE
 			FROM INFORMATION_SCHEMA.COLUMNS
-			WHERE TABLE_SCHEMA = %s
-			  AND TABLE_NAME = %s
+			WHERE TABLE_NAME = %s
 			ORDER BY ORDINAL_POSITION
 			""",
-			(config["table_schema"], config["table_name"]),
+			(config["db"]["database"], config["table_name"]),
 		)
 		metadata = cursor.fetchall()
 		if not metadata:
 			LOGGER.error(
 				"Table not found: %s.%s",
-				config["table_schema"],
+				config["db"]["database"],
 				config["table_name"],
 			)
 			raise ValueError(
-				f"Table not found: {config['table_schema']}.{config['table_name']}"
+				f"Table not found: {config['db']['database']}.{config['table_name']}"
 			)
 
 		columns = [column_name for column_name, _ in metadata]
@@ -163,7 +161,7 @@ def export_select_to_dbf(config):
 		]
 
 		cursor.execute(
-			f"SELECT * FROM `{config['table_schema']}`.`{config['table_name']}`"
+			f"SELECT * FROM `{config['db']['database']}`.`{config['table_name']}`"
 		)
 		rows = cursor.fetchall()
 		LOGGER.info("Read %s rows and %s columns", len(rows), len(columns))
