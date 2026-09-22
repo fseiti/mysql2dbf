@@ -57,7 +57,7 @@ Ao concluir, o programa informa a quantidade de linhas e colunas exportadas.
 ## Arquivos gerados
 
 - Arquivo DBF definido em `dbf_file`, normalmente `output.dbf`.
-- `convert_schema_mysql_dbf.log`, com o registro da execução e dos erros.
+- `Mysql2dbf.log`, com o registro da execução e dos erros.
 
 Se o arquivo DBF já existir, poderá ser substituído em uma nova exportação.
 
@@ -70,8 +70,4 @@ Tipos de texto são convertidos para campos de texto DBF; tipos inteiros e decim
 - **Configuração não encontrada:** verifique se `config.json` está ao lado do executável.
 - **Falha na conexão:** confira host, porta, usuário, senha e banco.
 - **Tabela não encontrada:** confirme `database` e `table_name`.
-- **Erro na execução:** consulte `convert_schema_mysql_dbf.log`.
-
-## Compilação
-
-Para gerar o executável, execute `build_exe.bat` na raiz do projeto. O executável será criado em `dist` com o nome `Mysql2dbf.exe`.
+- **Erro na execução:** consulte `Mysql2dbf.log`.
