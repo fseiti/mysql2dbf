@@ -2,47 +2,23 @@
 
 Ferramenta Python para exportar uma tabela MySQL para o formato DBF.
 
-O projeto foi desenvolvido com o auxílio do assistente GPT Luna.
-
 ## Recursos
 
-- Consulta a estrutura da tabela diretamente no MySQL.
+- Lê a estrutura da tabela diretamente no MySQL.
 - Exporta todos os registros para DBF.
-- Converte texto, números e datas para tipos compatíveis com DBF.
-- Normaliza os nomes dos campos para o limite de 10 caracteres do formato DBF.
-- Registra a execução e os erros em `Mysql2dbf.log`.
+- Converte textos, números e datas para tipos compatíveis com DBF.
+- Normaliza nomes de campos para o limite de 10 caracteres do formato DBF.
+- Registra execução e erros em `Mysql2dbf.log`.
 
 ## Requisitos
 
 - Python 3.10 ou superior.
-- MySQL acessível pelo computador.
-- Usuário MySQL com permissão de leitura na tabela.
+- MySQL acessível no ambiente.
+- Usuário MySQL com permissões de leitura na tabela.
 
-## Instalação
+## Configuração local
 
-Clone o repositório e entre na pasta do projeto:
-
-```bash
-git clone <URL_DO_REPOSITORIO>/mysql2dbf.git
-cd mysql2dbf
-```
-
-Crie e ative um ambiente virtual no Windows PowerShell:
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-Instale as dependências:
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
-## Configuração
-
-Edite `config.json` com os dados da conexão:
+Edite o arquivo `config.json` na raiz do projeto:
 
 ```json
 {
@@ -54,9 +30,11 @@ Edite `config.json` com os dados da conexão:
     "database": "nome_do_banco"
   },
   "table_name": "nome_da_tabela",
-  "dbf_file": "saida/output.dbf"
+  "dbf_file": "output.dbf"
 }
 ```
+
+### Campos
 
 - `host`: endereço do servidor MySQL.
 - `port`: porta do MySQL, normalmente `3306`.
@@ -64,38 +42,52 @@ Edite `config.json` com os dados da conexão:
 - `password`: senha do usuário.
 - `database`: banco que contém a tabela.
 - `table_name`: tabela que será exportada.
-- `dbf_file`: caminho do arquivo DBF de saída.
+- `dbf_file`: arquivo DBF de saída.
 
-O programa usa somente `database` e `table_name`; não é necessário informar `table_schema`.
-
-`dbf_file` pode ser relativo à pasta do script ou absoluto:
+A propriedade `dbf_file` aceita caminho relativo à pasta do projeto ou caminho absoluto:
 
 ```json
 "dbf_file": "C:/Exportacoes/dados.dbf"
 ```
 
-A pasta de destino deve existir antes da execução. Não publique credenciais reais no repositório.
+Se usar um caminho relativo, ele é resolvido a partir da pasta do script, isto é, a raiz do projeto. A pasta de destino precisa existir antes da execução.
 
 ## Execução
 
-Com o ambiente virtual ativado, execute:
+Entre na pasta do projeto e execute:
 
 ```powershell
+cd c:\Projects\MS\Tabnet\scripts\mysql2dbf
 python mysql2dbf.py
 ```
 
-Ao concluir, o programa informa o arquivo criado, a quantidade de linhas e a quantidade de colunas. Em caso de erro, consulte `Mysql2dbf.log`.
+Ou, com ambiente virtual:
 
-## Arquivos versionados
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python mysql2dbf.py
+```
 
-- `mysql2dbf.py`: código principal da aplicação.
-- `config.json`: configuração da conexão e da exportação.
-- `requirements.txt`: dependências Python.
-- `README.md`: documentação do projeto.
+Ao concluir, o programa exibe o arquivo criado, a quantidade de linhas e a quantidade de colunas. Em caso de falha, consulte `Mysql2dbf.log`.
 
-## Arquivos ignorados
+## Build do executável
 
-Arquivos temporários e gerados localmente não fazem parte do repositório, incluindo `.venv/`, `build/`, `dist/`, logs, DBFs, caches Python e arquivos de teste. O executável Windows e os arquivos de build não são distribuídos pelo GitHub nesta configuração.
+O script `build_exe.bat` gera um executável com PyInstaller e coloca o resultado no diretório `dist`.
+
+```powershell
+build_exe.bat
+```
+
+Esse comando cria um executável em `dist\Mysql2dbf.exe` e copia `config.json` para a pasta de distribuição. Mantenha o `config.json` ao lado do executável e ajuste os valores conforme o ambiente de destino.
+
+## Pastas importantes
+
+- `build/`: artefatos intermediários gerados pelo PyInstaller.
+- `csv/`: arquivos CSV locais e dados auxiliares do projeto.
+- `dist/`: executável empacotado e arquivos de distribuição.
+- `output.dbf`: DBF padrão gerado em execução local.
 
 ## Limitações
 
@@ -105,7 +97,7 @@ Arquivos temporários e gerados localmente não fazem parte do repositório, inc
 
 ## Segurança
 
-Para um repositório público, prefira manter um arquivo `config.example.json` sem senha e adicionar o `config.json` real ao `.gitignore` antes de publicar credenciais.
+Para repositórios públicos, prefira manter um arquivo de exemplo sem senha, como `config.example.json`, e não versionar o `config.json` real com credenciais.
 
 ## Licença
 
