@@ -1,16 +1,37 @@
-csv/pnsn.csv
-csv/pns.wal
-csv/pns
-csv/columns_202609211640.csv
-output.dbf
-pnsn.dbf
-*.log
-.venv
-dist/
-build/
+# Python virtual environments
+.venv/
+venv/
+ENV/
 
+# Python cache and compiled files
+__pycache__/
 **/__pycache__/
 *.py[cod]
-test*.py
-build_exe.bat
+*.pyo
+*.pyd
+
+# Local build artifacts
+build/
+dist/
+*.exe
 *.spec
+
+# Generated runtime data
+*.log
+*.dbf
+output.dbf
+csv/
+
+# Local configuration with secrets
+config.json
+.env
+.env.*
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+
+# Optional local test files
+/test_*
+*.tmp
+build_exe.bat

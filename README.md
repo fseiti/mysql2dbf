@@ -59,6 +59,7 @@ Crie um arquivo `config.json` na raiz do projeto com a seguinte estrutura:
     "database": "nome_do_banco"
   },
   "table_name": "nome_da_tabela",
+  "where": "status = 'active'",
   "dbf_file": "output.dbf"
 }
 ```
@@ -71,7 +72,16 @@ Crie um arquivo `config.json` na raiz do projeto com a seguinte estrutura:
 - `password`: senha do usuário
 - `database`: nome do banco que contém a tabela
 - `table_name`: tabela a ser exportada
+- `where`: condição MySQL opcional, sem escrever `WHERE`; deixe `""` para exportar todas as linhas
 - `dbf_file`: caminho do arquivo DBF de saída
+
+Exemplo de filtro por data:
+
+```json
+"where": "data >= '2026-01-01' AND situacao = 'A'"
+```
+
+O conteúdo de `where` é inserido diretamente na consulta SQL. Configure-o apenas com uma expressão confiável no arquivo local.
 
 O caminho `dbf_file` pode ser relativo à pasta do projeto ou absoluto:
 

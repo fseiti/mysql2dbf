@@ -41,6 +41,7 @@ def load_config():
 			"database": db_config["database"],
 		},
 		"table_name": config["table_name"],
+		"where": config.get("where", "").strip(),
 		"dbf_file": str(BASE_DIR / config["dbf_file"]),
 	}
 
@@ -137,7 +138,7 @@ def export_select_to_dbf(config):
 			"""
 			SELECT COLUMN_NAME, COLUMN_TYPE
 			FROM INFORMATION_SCHEMA.COLUMNS
-			WHERE TABLE_NAME = %s
+			WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
 			ORDER BY ORDINAL_POSITION
 			""",
 			(config["db"]["database"], config["table_name"]),
@@ -159,9 +160,12 @@ def export_select_to_dbf(config):
 			for _, column_type in metadata
 		]
 
-		cursor.execute(
+		select_query = (
 			f"SELECT * FROM `{config['db']['database']}`.`{config['table_name']}`"
 		)
+		if config["where"]:
+			select_query += f" WHERE {config['where']}"
+		cursor.execute(select_query)
 		rows = cursor.fetchall()
 		LOGGER.info("Read %s rows and %s columns", len(rows), len(columns))
 	finally:

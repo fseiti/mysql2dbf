@@ -7,5 +7,6 @@
     "database": "test"
   },
   "table_name": "pnsn",
+  "where": "data >= '2026-01-01' AND situacao = 'A'",
   "dbf_file": "output.dbf"
 }
